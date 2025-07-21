@@ -88,6 +88,28 @@ class Grade_calculator:
         else:
             self.summative_assignments.append(assignment)
 
+    def calculate_category_totals(self):
+        """ 
+        Calculate the total weighted grade for each category.
+        Return a turple: (formative_total, summative__total)
+        """
+        formative_total = sum ((a.grade * a.weight / 100) for a in self.formative_assignments)
+        summative_total = sum ((a.grade * a.weight / 100) for a in self.summative_assignments)
+        return formative_total, summative_total
+
+    def calculate_gpa(self):
+        # Calculate the overall GPA out of 5 based on all assignments and return the GPA as a float
+        all_assignments = self.formative_assignments + self.summative_assignments
+        if not all_assignments:
+            return 0.0
+        total_weighted_grade = sum((a.grade * a.weight / 100) for a in all_assignments)
+        total_weight = sum(a.weight for a in all_assignments)
+        if total_weight == 0:
+            return 0.0
+        gpa = (total_weighted_grade / total_weight) * 5
+        return gpa
+
+
 #Main function to run the grade calculator
 if __name__ == "__main__":
     calculator = Grade_calculator()
@@ -107,3 +129,12 @@ if __name__ == "__main__":
         choice = input("\nAdd another assignment? (yes/no): ").lower()
         if choice != 'yes':
             break
+
+    #After input, calculate and display category totals
+    formative_total, summative_total = calculator.calculate_category_totals()
+    print(f"\nFormative Category Total: {formative_total:.2f}")
+    print(f"Summative Category Total: {summative_total:.2f}")
+
+    #calculate and display GPA
+    gpa = calculator.calculate_gpa()
+    print(f"\nYour GPA (out of 5): {gpa:.2f}")
