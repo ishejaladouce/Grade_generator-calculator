@@ -1,16 +1,12 @@
-# -----------------------------
-# Grade Generator Calculator (Single Student Version)
-# -----------------------------
-# NOTE: The assignment requests comparison to an "average" grade. In a real classroom, this would be the class average.
-# For this individual lab, we use a fixed threshold (e.g., 50) for each category, as only one student's data is available.
-# All error handling and input validation is included for robustness.
 
 class Assignments:
     # Maximum weights for each category
     FORMATIVE_MAX_WEIGHT = 60
     SUMMATIVE_MAX_WEIGHT = 40
 
+    # Initialize assignment with validation and compute weighted grade
     def __init__(self, assignment_name, category, weight, grade):
+
         # Store the assignment details after validation
         self.assignment_name = assignment_name
         self.validate_category(category)
@@ -19,65 +15,75 @@ class Assignments:
         self.weight = weight
         self.validate_grade(grade)
         self.grade = grade
+
         # Calculate weighted grade
         self.weighted_grade = (grade * weight) / 100
 
+    # Ensure category is either 'Formative' or 'Summative'
     def validate_category(self, category):
+
         # Check if the category is either 'Formative' or 'Summative'
         if category not in ['Formative', 'Summative']:
             raise ValueError("Category must be either 'Formative' or 'Summative'")
 
+    # Ensure weight is a valid percentage between 0 and 100
     def validate_weight(self, weight):
         # Check if the weight is between 0 and 100
         if not (0 <= weight <= 100):
             raise ValueError("Weight must be between 0 and 100")
 
+    # Ensure grade is a valid percentage between 0 and 100
     def validate_grade(self, grade):
         # Check if the grade is between 0 and 100
         if not (0 <= grade <= 100):
             raise ValueError("Grade must be between 0 and 100")
 
-# -----------------------------
-# Grade Calculator Class (Single Student)
-# -----------------------------
 class Grade_calculator:
+
+    # Initialize lists to hold formative and summative assignments
     def __init__(self):
-        # Initialize lists to store assignments
         self.formative_assignments = []
         self.summative_assignments = []
 
+    # Calculate total weight of assignments in a given category
     def get_category_total_weight(self, category):
-        # Calculate total weight for a category
         if category == 'Formative':
             return sum(a.weight for a in self.formative_assignments)
         return sum(a.weight for a in self.summative_assignments)
 
+    # Check that adding new weight does not exceed max allowed for category
     def validate_category_weight(self, category, new_weight):
-        # Check if adding new weight would exceed category limit
         current_weight = self.get_category_total_weight(category)
-        if category == 'Formative' and (current_weight + new_weight) > Assignments.FORMATIVE_MAX_WEIGHT:
-            raise ValueError(f"Total Formative weight cannot exceed {Assignments.FORMATIVE_MAX_WEIGHT}%")
-        elif category == 'Summative' and (current_weight + new_weight) > Assignments.SUMMATIVE_MAX_WEIGHT:
-            raise ValueError(f"Total Summative weight cannot exceed {Assignments.SUMMATIVE_MAX_WEIGHT}%")
+        max_weight = Assignments.FORMATIVE_MAX_WEIGHT if category == 'Formative' else Assignments.SUMMATIVE_MAX_WEIGHT
+        if (current_weight + new_weight) > max_weight:
+            raise ValueError(f"Total {category} weight cannot exceed {max_weight}%. You have {max_weight - current_weight}% left.")
 
+    # Collect and validate all assignment details from user input
     def get_input_from_user(self):
-        # Collect assignment details from user with robust error handling
         try:
-            assignment_name = input("\nEnter the assignment (e.g, Group Project, Quiz4): ").strip()
-            if not assignment_name:
-                raise ValueError("Assignment name cannot be empty.")
-            # Get and validate category
+            # Re-prompt assignment_name if empty
             while True:
-                category = input("Enter the category (Formative/Summative): ").strip()
+                assignment_name = input("\nEnter the assignment (e.g., Group Project, Quiz4): ").strip()
+                if assignment_name:
+                    break
+                print("Assignment name cannot be empty.")
+
+            while True:
+                category = input("Enter the category (Formative/Summative): ").strip().capitalize()
                 if category in ['Formative', 'Summative']:
                     break
                 print("Please enter either 'Formative' or 'Summative'")
-            # Get and validate weight
+
+            current_weight = self.get_category_total_weight(category)
+            max_weight = Assignments.FORMATIVE_MAX_WEIGHT if category == 'Formative' else Assignments.SUMMATIVE_MAX_WEIGHT
+            print(f"You have {max_weight - current_weight}% {category} weight left.")
+
             while True:
                 try:
                     weight_input = input("Enter assignment weight (0-100): ").strip()
                     if not weight_input:
-                        raise ValueError("Weight cannot be empty.")
+                        print("Weight cannot be empty.")
+                        continue
                     weight = float(weight_input)
                     self.validate_category_weight(category, weight)
                     if 0 <= weight <= 100:
@@ -85,20 +91,56 @@ class Grade_calculator:
                     print("Weight must be between 0 and 100")
                 except ValueError as e:
                     print(f"Invalid input: {e}")
-            # Get and validate grade
+
             while True:
                 try:
-                    grade_input = input("Enter grade received (0-100): ").strip()
-                    if not grade_input:
-                        raise ValueError("Grade cannot be empty.")
-                    grade = float(grade_input)
-                    if 0 <= grade <= 100:
+                    is_percentage = input("Was this assignment graded out of 100? (yes/no): ").strip().lower()
+                    if not is_percentage:
+                        print("Please answer with 'yes' or 'no'.")
+                        continue
+                    if is_percentage in ['yes', 'no']:
                         break
-                    print("Grade must be between 0 and 100")
-                except ValueError as e:
+                    print("Please answer with 'yes' or 'no'.")
+                except Exception as e:
                     print(f"Invalid input: {e}")
-            # Create and return a new assignment
+
+            if is_percentage == 'yes':
+                while True:
+                    try:
+                        grade_input = input("Enter your grade as a percentage (e.g., 85): ").strip()
+                        if not grade_input:
+                            print("Grade cannot be empty.")
+                            continue
+                        grade = float(grade_input)
+                        if 0 <= grade <= 100:
+                            break
+                        print("Grade must be between 0 and 100")
+                    except ValueError:
+                        print("Please enter a valid number.")
+            else:
+                while True:
+                    try:
+                        raw_input = input("Enter the score you received (e.g., 18): ").strip()
+                        if not raw_input:
+                            print("Score cannot be empty.")
+                            continue
+                        raw = float(raw_input)
+                        total_input = input("Enter the total marks the assignment was out of (e.g., 20): ").strip()
+                        if not total_input:
+                            print("Total marks cannot be empty.")
+                            continue
+                        total = float(total_input)
+                        if total <= 0:
+                            print("Total must be greater than 0.")
+                            continue
+                        grade = (raw / total) * 100
+                        print(f"Converted grade: {grade:.2f}%")
+                        break
+                    except ValueError:
+                        print("Please enter valid numbers.")
+
             return Assignments(assignment_name, category, weight, grade)
+
         except KeyboardInterrupt:
             print("\nInput cancelled by user.")
             return None
@@ -106,26 +148,45 @@ class Grade_calculator:
             print(f"Error: {e}")
             return None
 
+    # Add a validated assignment to the appropriate list and update progress
     def add_assignment(self, assignment):
-        # Add assignment to the appropriate category list
         if assignment.category == 'Formative':
             self.formative_assignments.append(assignment)
         else:
             self.summative_assignments.append(assignment)
+        self.show_progress()
 
+    # Calculate total weighted grade for a specific category
     def calculate_category_total(self, category):
-        # Calculate total weighted grade for a category
         if category == 'Formative':
             return sum(a.weighted_grade for a in self.formative_assignments)
         return sum(a.weighted_grade for a in self.summative_assignments)
 
+    # Calculate overall GPA based on total weighted grades
     def calculate_gpa(self):
-        # Calculate GPA out of 5
         total_weighted = sum(a.weighted_grade for a in self.formative_assignments + self.summative_assignments)
         return (total_weighted / 100) * 5 if total_weighted > 0 else 0.0
 
+    # Display current progress and how close user is to passing
+    def show_progress(self):
+        FORMATIVE_PASS = Assignments.FORMATIVE_MAX_WEIGHT * 0.6
+        SUMMATIVE_PASS = Assignments.SUMMATIVE_MAX_WEIGHT * 0.6
+        formative_total = self.calculate_category_total('Formative')
+        summative_total = self.calculate_category_total('Summative')
+        print(f"\n[Progress]")
+        print(f"Formative: {formative_total:.2f}/{FORMATIVE_PASS:.2f} needed to pass ({Assignments.FORMATIVE_MAX_WEIGHT} max weight)")
+        print(f"Summative: {summative_total:.2f}/{SUMMATIVE_PASS:.2f} needed to pass ({Assignments.SUMMATIVE_MAX_WEIGHT} max weight)")
+        if formative_total < FORMATIVE_PASS:
+            print(f"You need {FORMATIVE_PASS - formative_total:.2f} more points in Formative to pass.")
+        else:
+            print("Formative: PASS threshold already met!")
+        if summative_total < SUMMATIVE_PASS:
+            print(f"You need {SUMMATIVE_PASS - summative_total:.2f} more points in Summative to pass.")
+        else:
+            print("Summative: PASS threshold already met!")
+
+    # Print a formatted transcript of all assignments and grades
     def display_transcript(self):
-        # Display student's transcript
         print(f"\n{'='*50}")
         print(f"GRADE TRANSCRIPT")
         print(f"{'='*50}")
@@ -144,32 +205,43 @@ class Grade_calculator:
         print(f"GPA{' '*41}{gpa:.3f}")
         print(f"{'='*50}")
 
-    def determine_pass_fail(self, min_required=50):
-        # Determine pass/fail for the student based on fixed minimum threshold
+    # Determine and print whether the user passed or failed based on thresholds
+    def determine_pass_fail(self):
+        FORMATIVE_PASS = Assignments.FORMATIVE_MAX_WEIGHT * 0.6
+        SUMMATIVE_PASS = Assignments.SUMMATIVE_MAX_WEIGHT * 0.6
         formative_total = self.calculate_category_total('Formative')
         summative_total = self.calculate_category_total('Summative')
-        if formative_total >= min_required and summative_total >= min_required:
+        print(f"Pass threshold - Formative: {FORMATIVE_PASS:.2f}, Summative: {SUMMATIVE_PASS:.2f}")
+        print("")
+        if formative_total >= FORMATIVE_PASS and summative_total >= SUMMATIVE_PASS:
             print("Result: PASS (You met the minimum in both categories!)")
         else:
             print("Result: FAIL (You did not meet the minimum in one or both categories.)")
+            if formative_total < FORMATIVE_PASS:
+                print(f"You needed {FORMATIVE_PASS - formative_total:.2f} more points in Formative.")
+            if summative_total < SUMMATIVE_PASS:
+                print(f"You needed {SUMMATIVE_PASS - summative_total:.2f} more points in Summative.")
 
-# -----------------------------
 # Main Program
-# -----------------------------
 if __name__ == "__main__":
-    # Start the grade calculator for a single student
     calculator = Grade_calculator()
     print("\nWelcome to the Grade Calculator!")
     print("Note: Maximum weights - Formative: 60%, Summative: 40%")
-    print(" ")
+    print("To PASS: You need at least 36 points in Formative and 24 in Summative (60% of max possible).\n")
     while True:
         assignment = calculator.get_input_from_user()
         if assignment is None:
             break
         calculator.add_assignment(assignment)
-        choice = input("\nAdd another assignment? (yes/no): ").lower()
+        while True:
+            choice = input("\nAdd another assignment? (yes/no): ").strip().lower()
+            if not choice:
+                print("Please answer 'yes' or 'no'.")
+                continue
+            if choice in ['yes', 'no']:
+                break
+            print("Please answer 'yes' or 'no'.")
         if choice != 'yes':
             break
-    # Display transcript and pass/fail result
     calculator.display_transcript()
     calculator.determine_pass_fail()
